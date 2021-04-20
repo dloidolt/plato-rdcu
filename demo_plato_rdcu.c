@@ -45,6 +45,7 @@
 
 #include <cmp_support.h>
 #include <cmp_rdcu.h>
+#include <cmp_icu.h>
 
 #include <cfg.h>
 #include <demo.h>
@@ -788,6 +789,79 @@ static void rdcu_compression_cmp_lib_demo(void)
 	/* read updated model to some buffer and print */
 }
 
+
+/**
+ * @brief demonstrate a compression using the cmp_icu library
+ */
+
+static void icu_compression_cmp_lib_demo(void)
+{
+	int error;
+	uint32_t s, i;
+
+	/* declare configuration and information structure */
+	struct cmp_cfg example_cfg;
+	struct cmp_info example_info;
+
+	/* set up compressor configuration */
+	example_cfg = DEFAULT_CFG_MODEL;
+	example_cfg.input_buf = data;
+	example_cfg.model_buf = model;
+	example_cfg.samples = NUMSAMPLES;
+	example_cfg.buffer_length = COMPRDATALEN;
+
+	example_cfg.icu_new_model_buf = malloc(NUMSAMPLES * size_of_a_sample(example_cfg.cmp_mode));
+	if (!example_cfg.icu_new_model_buf) {
+		printf("malloc failed!\n");
+		return;
+	}
+
+	example_cfg.icu_output_buf = malloc(NUMSAMPLES * size_of_a_sample(example_cfg.cmp_mode));
+	if (!example_cfg.icu_output_buf) {
+		printf("malloc failed!\n");
+		return;
+	}
+
+	error = icu_compress_data(&example_cfg, &example_info);
+	if (error || example_info.cmp_err != 0) {
+		printf("Compression error %#X\n", example_info.cmp_err);
+		free(example_cfg.icu_new_model_buf);
+		free(example_cfg.icu_output_buf);
+		return;
+	}
+
+	printf("\n\nHere's the compressed data (cmp_size %lu):\n"
+	       "================================\n", example_info.cmp_size);
+
+	s = size_of_bitstream(example_info.cmp_size);
+
+	for (i = 0; i < s; i++) {
+		uint8_t *p = example_cfg.icu_output_buf;
+		printf("%02X ", p[i]);
+		if (i && !((i+1) % 40))
+			printf("\n");
+	}
+	printf("\n");
+
+
+	printf("\n\nHere's the updated model (samples_used %lu):\n"
+	       "================================\n", example_info.samples_used);
+
+	s = size_of_model(example_info.samples_used, example_info.cmp_mode_used);
+
+	for (i = 0; i < s; i++) {
+		uint8_t *p = example_cfg.icu_new_model_buf;
+		printf("%02X ", p[i]);
+		if (i && !((i+1) % 40))
+			printf("\n");
+	}
+	printf("\n");
+
+	free(example_cfg.icu_new_model_buf);
+	free(example_cfg.icu_output_buf);
+}
+
+
 /**
  * @brief exchange some stuff
  */
@@ -859,11 +933,15 @@ static void rdcu_demo(void)
 
 	/* now do some compression work using the cmp_rdcu library */
 	rdcu_compression_cmp_lib_demo();
+
+	/* now use the software compression to compress the data */
+	icu_compression_cmp_lib_demo();
 }
 
 
 int main(void)
 {
+
 	uint8_t dpath[] = DPATH;
 	uint8_t rpath[] = RPATH;
 

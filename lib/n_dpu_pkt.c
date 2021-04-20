@@ -20,8 +20,9 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "../include/n_dpu_pkt.h"
-#include "../include/cmp_support.h"
+#include <include/n_dpu_pkt.h>
+#include <include/cmp_support.h>
+#include <cmp_debug.h>
 
 
 /**
@@ -54,7 +55,7 @@ int lossy_rounding_16(uint16_t *data_buf, unsigned int samples, unsigned int
 		return 0;
 
 	for (i = 0; i < samples; i++)
-		data_buf[i] = round_down(data_buf[i], round);  /* this is the lossy step */
+		data_buf[i] = round_fwd(data_buf[i], round);  /* this is the lossy step */
 
 	return 0;
 }
@@ -92,7 +93,7 @@ int de_lossy_rounding_16(uint16_t *data_buf, uint32_t samples_used, uint32_t
 			printf("learn how to print debug messages!");
 			return -1;
 		}
-		data_buf[i] = round_back(data_buf[i], round_used);
+		data_buf[i] = round_inv(data_buf[i], round_used);
 	}
 	return 0;
 }
@@ -128,7 +129,7 @@ int lossy_rounding_32(uint32_t *data_buf, unsigned int samples, unsigned int
 		return 0;
 
 	for (i = 0; i < samples; i++)
-		data_buf[i] = round_down(data_buf[i], round);  /* this is the lossy step */
+		data_buf[i] = round_fwd(data_buf[i], round);  /* this is the lossy step */
 
 	return 0;
 }
@@ -156,7 +157,7 @@ int de_lossy_rounding_32(uint32_t *data_buf, uint32_t samples_used, uint32_t
 			printf("learn how to print debug messages!");
 			return -1;
 		}
-		data_buf[i] = round_back(data_buf[i], round_used);
+		data_buf[i] = round_inv(data_buf[i], round_used);
 	}
 	return 0;
 }
@@ -215,7 +216,7 @@ int lossy_rounding_S_FX(struct S_FX *data_buf, unsigned int samples, unsigned
 		return 0;
 
 	for (i = 0; i < samples; i++)
-		data_buf[i].FX = round_down(data_buf[i].FX, round);
+		data_buf[i].FX = round_fwd(data_buf[i].FX, round);
 
 	return 0;
 }
@@ -239,13 +240,11 @@ int de_lossy_rounding_S_FX(struct S_FX *data_buf, unsigned int samples_used,
 		uint32_t mask = (~0U << (32-round_used));
 
 		if (data_buf[i].FX & mask) {
-#if DEBUG
-			printf("learn how to print debug messages!");
-#endif
+			debug_print("de_lossy_rounding_S_FX failed!");
 			return -1;
 		}
 
-		data_buf[i].FX = round_back(data_buf[i].FX, round_used);
+		data_buf[i].FX = round_inv(data_buf[i].FX, round_used);
 	}
 	return 0;
 }
@@ -321,8 +320,8 @@ int lossy_rounding_S_FX_EFX(struct S_FX_EFX *data, unsigned int samples,
 
 	for (i = 0; i < samples; i++)
 	{
-		data[i].FX = round_down(data[i].FX, round);
-		data[i].EFX = round_down(data[i].EFX, round);
+		data[i].FX = round_fwd(data[i].FX, round);
+		data[i].EFX = round_fwd(data[i].EFX, round);
 	}
 	return 0;
 }
@@ -354,8 +353,8 @@ int de_lossy_rounding_S_FX_EFX(struct S_FX_EFX *data_buf, unsigned int
 			return -1;
 		}
 
-		data_buf[i].FX = round_back(data_buf[i].FX, round_used);
-		data_buf[i].EFX = round_back(data_buf[i].EFX, round_used);
+		data_buf[i].FX = round_inv(data_buf[i].FX, round_used);
+		data_buf[i].EFX = round_inv(data_buf[i].EFX, round_used);
 	}
 	return 0;
 }
@@ -434,9 +433,9 @@ int lossy_rounding_S_FX_NCOB(struct S_FX_NCOB *data_buf, unsigned int samples,
 
 	for (i = 0; i < samples; i++)
 	{
-		data_buf[i].FX = round_down(data_buf[i].FX, round);
-		data_buf[i].NCOB_X = round_down(data_buf[i].NCOB_X, round);
-		data_buf[i].NCOB_Y = round_down(data_buf[i].NCOB_Y, round);
+		data_buf[i].FX = round_fwd(data_buf[i].FX, round);
+		data_buf[i].NCOB_X = round_fwd(data_buf[i].NCOB_X, round);
+		data_buf[i].NCOB_Y = round_fwd(data_buf[i].NCOB_Y, round);
 	}
 	return 0;
 }
@@ -472,9 +471,9 @@ int de_lossy_rounding_S_FX_NCOB(struct S_FX_NCOB *data_buf, unsigned int
 			return -1;
 		}
 
-		data_buf[i].FX = round_back(data_buf[i].FX, round_used);
-		data_buf[i].NCOB_X = round_back(data_buf[i].NCOB_X, round_used);
-		data_buf[i].NCOB_Y = round_back(data_buf[i].NCOB_Y, round_used);
+		data_buf[i].FX = round_inv(data_buf[i].FX, round_used);
+		data_buf[i].NCOB_X = round_inv(data_buf[i].NCOB_X, round_used);
+		data_buf[i].NCOB_Y = round_inv(data_buf[i].NCOB_Y, round_used);
 	}
 	return 0;
 }
@@ -562,12 +561,12 @@ int lossy_rounding_S_FX_EFX_NCOB_ECOB(struct S_FX_EFX_NCOB_ECOB *data_buf,
 
 	for (i = 0; i < samples; i++)
 	{
-		data_buf[i].FX = round_down(data_buf[i].FX, round);
-		data_buf[i].NCOB_X = round_down(data_buf[i].NCOB_X, round);
-		data_buf[i].NCOB_Y = round_down(data_buf[i].NCOB_Y, round);
-		data_buf[i].EFX = round_down(data_buf[i].EFX, round);
-		data_buf[i].ECOB_X = round_down(data_buf[i].ECOB_X, round);
-		data_buf[i].ECOB_Y = round_down(data_buf[i].ECOB_Y, round);
+		data_buf[i].FX = round_fwd(data_buf[i].FX, round);
+		data_buf[i].NCOB_X = round_fwd(data_buf[i].NCOB_X, round);
+		data_buf[i].NCOB_Y = round_fwd(data_buf[i].NCOB_Y, round);
+		data_buf[i].EFX = round_fwd(data_buf[i].EFX, round);
+		data_buf[i].ECOB_X = round_fwd(data_buf[i].ECOB_X, round);
+		data_buf[i].ECOB_Y = round_fwd(data_buf[i].ECOB_Y, round);
 	}
 	return 0;
 }
@@ -617,12 +616,12 @@ int de_lossy_rounding_S_FX_EFX_NCOB_ECOB(struct S_FX_EFX_NCOB_ECOB *data_buf,
 			return -1;
 		}
 
-		data_buf[i].FX = round_back(data_buf[i].FX, round_used);
-		data_buf[i].NCOB_X = round_back(data_buf[i].NCOB_X, round_used);
-		data_buf[i].NCOB_Y = round_back(data_buf[i].NCOB_Y, round_used);
-		data_buf[i].EFX = round_back(data_buf[i].EFX, round_used);
-		data_buf[i].ECOB_X = round_back(data_buf[i].ECOB_X, round_used);
-		data_buf[i].ECOB_Y = round_back(data_buf[i].ECOB_Y, round_used);
+		data_buf[i].FX = round_inv(data_buf[i].FX, round_used);
+		data_buf[i].NCOB_X = round_inv(data_buf[i].NCOB_X, round_used);
+		data_buf[i].NCOB_Y = round_inv(data_buf[i].NCOB_Y, round_used);
+		data_buf[i].EFX = round_inv(data_buf[i].EFX, round_used);
+		data_buf[i].ECOB_X = round_inv(data_buf[i].ECOB_X, round_used);
+		data_buf[i].ECOB_Y = round_inv(data_buf[i].ECOB_Y, round_used);
 	}
 	return 0;
 }

@@ -14,7 +14,9 @@ SOURCES         := $(wildcard *.c)\
 		   $(SOURCEDIR)/rdcu_cmd.c \
 		   $(SOURCEDIR)/rdcu_rmap.c \
 		   $(SOURCEDIR)/cmp_support.c \
+		   $(SOURCEDIR)/n_dpu_pkt.c \
 		   $(SOURCEDIR)/cmp_rdcu.c \
+		   $(SOURCEDIR)/cmp_icu.c \
 		   $(SOURCEDIR)/gr718b_rmap.c \
 		   $(SOURCEDIR)/leon3_grtimer.c \
 		   $(SOURCEDIR)/leon3_grtimer_longcount.c \
