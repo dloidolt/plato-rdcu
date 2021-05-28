@@ -645,20 +645,20 @@ static void rdcu_compression_demo(void)
 
 	/* read compressed data to some buffer and print */
 	if (1) {
-		uint32_t i;
+		/* uint32_t i; */
 		uint32_t s = rdcu_get_compr_data_size() >> 3;
 		uint8_t *myresult = malloc(s);
 		rdcu_read_sram(myresult, COMPRSTART, s);
 
-		printf("\n\nHere's the compressed data (size %lu):\n"
-		       "================================\n", s);
+		/* printf("\n\nHere's the compressed data (size %lu):\n" */
+		/*        "================================\n", s); */
 
-		for (i = 0; i < s; i++) {
-			printf("%02X ", myresult[i]);
-			if (i && !((i+1) % 40))
-				printf("\n");
-		}
-		printf("\n");
+		/* for (i = 0; i < s; i++) { */
+		/* 	printf("%02X ", myresult[i]); */
+		/* 	if (i && !((i+1) % 40)) */
+		/* 		printf("\n"); */
+		/* } */
+		/* printf("\n"); */
 
 		free(myresult);
 	}
@@ -734,7 +734,7 @@ static void rdcu_compression_cmp_lib_demo(void)
 
 	/* read compressed data to some buffer and print */
 	if (1) {
-		uint32_t i;
+		/* uint32_t i; */
 		uint32_t s = size_of_bitstream(example_info.cmp_size);
 		uint8_t *myresult = malloc(s);
 
@@ -746,21 +746,21 @@ static void rdcu_compression_cmp_lib_demo(void)
 		if (rdcu_read_cmp_bitstream(&example_info, myresult) < 0)
 			printf("Error occurred by reading in the compressed data");
 
-		printf("\n\nHere's the compressed data (size %lu):\n"
-		       "================================\n", s);
+		/* printf("\n\nHere's the compressed data (size %lu):\n" */
+		/*        "================================\n", s); */
 
-		for (i = 0; i < s; i++) {
-			printf("%02X ", myresult[i]);
-			if (i && !((i+1) % 40))
-				printf("\n");
-		}
-		printf("\n");
+		/* for (i = 0; i < s; i++) { */
+		/* 	printf("%02X ", myresult[i]); */
+		/* 	if (i && !((i+1) % 40)) */
+		/* 		printf("\n"); */
+		/* } */
+		/* printf("\n"); */
 
 		free(myresult);
 	}
 
 	if (1) {
-		uint32_t i;
+		/* uint32_t i; */
 		uint32_t s = size_of_model(example_info.samples_used,
 					   example_info.cmp_mode_used);
 		uint8_t *mymodel = malloc(s);
@@ -773,15 +773,15 @@ static void rdcu_compression_cmp_lib_demo(void)
 		if (rdcu_read_model(&example_info, mymodel) < 0)
 			printf("Error occurred by reading in the compressed data");
 
-		printf("\n\nHere's the updated model (size %lu):\n"
-		       "================================\n", s);
+		/* printf("\n\nHere's the updated model (size %lu):\n" */
+		/*        "================================\n", s); */
 
-		for (i = 0; i < s; i++) {
-			printf("%02X ", mymodel[i]);
-			if (i && !((i+1) % 40))
-				printf("\n");
-		}
-		printf("\n");
+		/* for (i = 0; i < s; i++) { */
+		/* 	printf("%02X ", mymodel[i]); */
+		/* 	if (i && !((i+1) % 40)) */
+		/* 		printf("\n"); */
+		/* } */
+		/* printf("\n"); */
 
 		free(mymodel);
 	}
@@ -798,6 +798,8 @@ static void icu_compression_cmp_lib_demo(void)
 {
 	int error;
 	uint32_t s, i;
+	struct grtimer_uptime t_s, t_e;
+	double cmp_time;
 
 	/* declare configuration and information structure */
 	struct cmp_cfg example_cfg;
@@ -805,6 +807,7 @@ static void icu_compression_cmp_lib_demo(void)
 
 	/* set up compressor configuration */
 	example_cfg = DEFAULT_CFG_MODEL;
+	example_cfg.golomb_par = 5;
 	example_cfg.input_buf = data;
 	example_cfg.model_buf = model;
 	example_cfg.samples = NUMSAMPLES;
@@ -816,11 +819,14 @@ static void icu_compression_cmp_lib_demo(void)
 		return;
 	}
 
-	example_cfg.icu_output_buf = malloc(NUMSAMPLES * size_of_a_sample(example_cfg.cmp_mode));
+	example_cfg.icu_output_buf = malloc(2*NUMSAMPLES * size_of_a_sample(example_cfg.cmp_mode));
 	if (!example_cfg.icu_output_buf) {
 		printf("malloc failed!\n");
+		free(example_cfg.icu_new_model_buf);
 		return;
 	}
+
+	grtimer_longcount_get_uptime(rtu, &t_s);
 
 	error = icu_compress_data(&example_cfg, &example_info);
 	if (error || example_info.cmp_err != 0) {
@@ -830,16 +836,21 @@ static void icu_compression_cmp_lib_demo(void)
 		return;
 	}
 
+	grtimer_longcount_get_uptime(rtu, &t_e);
+	cmp_time = grtimer_longcount_difftime(rtu, t_e, t_s);
+	printf("compression of %lu samples in %g seconds => %g samples/s\n",
+	       NUMSAMPLES, cmp_time, NUMSAMPLES/cmp_time);
+
 	printf("\n\nHere's the compressed data (cmp_size %lu):\n"
 	       "================================\n", example_info.cmp_size);
 
 	s = size_of_bitstream(example_info.cmp_size);
 
 	for (i = 0; i < s; i++) {
-		uint8_t *p = example_cfg.icu_output_buf;
-		printf("%02X ", p[i]);
-		if (i && !((i+1) % 40))
-			printf("\n");
+		/* uint8_t *p = example_cfg.icu_output_buf; */
+		/* printf("%02X ", p[i]); */
+		/* if (i && !((i+1) % 40)) */
+		/* 	printf("\n"); */
 	}
 	printf("\n");
 
@@ -850,10 +861,10 @@ static void icu_compression_cmp_lib_demo(void)
 	s = size_of_model(example_info.samples_used, example_info.cmp_mode_used);
 
 	for (i = 0; i < s; i++) {
-		uint8_t *p = example_cfg.icu_new_model_buf;
-		printf("%02X ", p[i]);
-		if (i && !((i+1) % 40))
-			printf("\n");
+		/* uint8_t *p = example_cfg.icu_new_model_buf; */
+		/* printf("%02X ", p[i]); */
+		/* if (i && !((i+1) % 40)) */
+		/* 	printf("\n"); */
 	}
 	printf("\n");
 
